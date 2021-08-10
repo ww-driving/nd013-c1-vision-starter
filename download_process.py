@@ -27,8 +27,10 @@ def create_tf_example(filename, encoded_jpeg, annotations, resize=True):
         encoded_jpg_io = io.BytesIO(encoded_jpeg)
         image = Image.open(encoded_jpg_io)
         width, height = image.size
+        origin_height, origin_width = height, width
     else:
         image_tensor = tf.io.decode_jpeg(encoded_jpeg)
+        origin_height, origin_width, _ = image_tensor.shape
         image_res = tf.cast(tf.image.resize(image_tensor, (640, 640)), tf.uint8)
         encoded_jpeg = tf.io.encode_jpeg(image_res).numpy()
         width, height = 640, 640
@@ -46,10 +48,10 @@ def create_tf_example(filename, encoded_jpeg, annotations, resize=True):
     for ann in annotations:
         xmin, ymin = ann.box.center_x - 0.5 * ann.box.length, ann.box.center_y - 0.5 * ann.box.width
         xmax, ymax = ann.box.center_x + 0.5 * ann.box.length, ann.box.center_y + 0.5 * ann.box.width
-        xmins.append(xmin / width)
-        xmaxs.append(xmax / width)
-        ymins.append(ymin / height)
-        ymaxs.append(ymax / height)
+        xmins.append(xmin / origin_width)
+        xmaxs.append(xmax / origin_width)
+        ymins.append(ymin / origin_height)
+        ymaxs.append(ymax / origin_height)
         classes.append(ann.type)
         classes_text.append(mapping[ann.type].encode('utf8'))
 
@@ -84,15 +86,17 @@ def download_tfr(filename, data_dir):
     # create data dir
     dest = os.path.join(data_dir, 'raw')
     os.makedirs(dest, exist_ok=True)
-
-    # download the tf record file
-    cmd = ['gsutil', 'cp', filename, f'{dest}']
-    logger.info(f'Downloading {filename}')
-    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if res.returncode != 0:
-        logger.error(f'Could not download file {filename}')
-
+    
     local_path = os.path.join(dest, os.path.basename(filename))
+
+    if not os.path.isfile(local_path):
+        # download the tf record file
+        cmd = ['gsutil', 'cp', filename, f'{dest}']
+        logger.info(f'Downloading {filename}')
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if res.returncode != 0:
+            logger.error(f'Could not download file {filename}')
+
     return local_path
 
 
@@ -108,29 +112,35 @@ def process_tfr(path, data_dir):
     dest = os.path.join(data_dir, 'processed')
     os.makedirs(dest, exist_ok=True)
     file_name = os.path.basename(path)
+    output_file = f'{dest}/{file_name}'
 
-    logger.info(f'Processing {path}')
-    writer = tf.python_io.TFRecordWriter(f'{dest}/{file_name}')
-    dataset = tf.data.TFRecordDataset(path, compression_type='')
-    for idx, data in enumerate(dataset):
-        frame = open_dataset.Frame()
-        frame.ParseFromString(bytearray(data.numpy()))
-        encoded_jpeg, annotations = parse_frame(frame)
-        filename = file_name.replace('.tfrecord', f'_{idx}.tfrecord')
-        tf_example = create_tf_example(filename, encoded_jpeg, annotations)
-        writer.write(tf_example.SerializeToString())
-    writer.close()
+    if not os.path.isfile(output_file):
+        logger.info(f'Processing {path}')
+        writer = tf.python_io.TFRecordWriter(output_file)
+        dataset = tf.data.TFRecordDataset(path, compression_type='')
+        for idx, data in enumerate(dataset):
+            frame = open_dataset.Frame()
+            frame.ParseFromString(bytearray(data.numpy()))
+            encoded_jpeg, annotations = parse_frame(frame)
+            filename = file_name.replace('.tfrecord', f'_{idx}.tfrecord')
+            tf_example = create_tf_example(filename, encoded_jpeg, annotations)
+            writer.write(tf_example.SerializeToString())
+        writer.close()
 
 
 @ray.remote
 def download_and_process(filename, temp_dir, data_dir):
     # need to re-import the logger because of multiprocesing
-    logger = get_module_logger(__name__)
-    local_path = download_tfr(filename, temp_dir)
-    process_tfr(local_path, data_dir)
-    # remove the original tf record to save space
-    logger.info(f'Deleting {local_path}')
-    os.remove(local_path)
+    try:
+        logger = get_module_logger(__name__)
+        local_path = download_tfr(filename, temp_dir)
+        process_tfr(local_path, data_dir)
+        # remove the original tf record to save space
+        # logger.info(f'Deleting {local_path}')
+        # os.remove(local_path)
+    except Exception as e:
+        logger.error(f'Error processing {filename}')
+        logger.exception(e)
 
 
 if __name__ == "__main__": 

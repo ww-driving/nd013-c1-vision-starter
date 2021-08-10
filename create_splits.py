@@ -4,8 +4,10 @@ import os
 import random
 
 import numpy as np
+import tensorflow.compat.v1 as tf
 
 from utils import get_module_logger
+from shutil import copyfile
 
 
 def split(data_dir):
@@ -16,7 +18,37 @@ def split(data_dir):
     args:
         - data_dir [str]: data directory, /mnt/data
     """
-    # TODO: Implement function
+    
+    dirs = [os.path.join(data_dir, x) for x in ['train', 'val', 'test']]
+    [os.makedirs(x, exist_ok=True) for x in dirs]
+    
+    source = glob.glob(f'{data_dir}/processed/*.tfrecord')
+    source = sorted(source, key=lambda x: random.random())
+    train_set, test_set = source[:-len(source) // 5], source[-len(source) // 5:]
+    
+    for path in train_set:
+        logger.info(f'Processing {path}')
+        file_name = os.path.basename(path)
+        train_file, val_file = f'{data_dir}/train/{file_name}', f'{data_dir}/val/{file_name}'
+        train_writer, val_writer = tf.python_io.TFRecordWriter(train_file), tf.python_io.TFRecordWriter(val_file)
+        dataset = tf.data.TFRecordDataset(path, compression_type='')
+        for rec_count, data in enumerate(dataset):
+            pass
+        for i, data in enumerate(dataset):
+            example = tf.train.Example()
+            example.ParseFromString(data.numpy())
+            if i < rec_count * 0.8:
+                train_writer.write(example.SerializeToString())
+            else:
+                val_writer.write(example.SerializeToString())
+        train_writer.close()
+        val_writer.close()
+        
+    for path in test_set:
+        logger.info(f'Copying {path}')
+        file_name = os.path.basename(path)
+        test_file = f'{data_dir}/test/{file_name}'
+        copyfile(path, test_file)
     
 
 if __name__ == "__main__": 
