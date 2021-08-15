@@ -459,7 +459,38 @@ data
 
 ### Training 
 #### Reference experiment
-This section should detail the results of the reference experiment. It should includes training metrics and a detailed explanation of the algorithm's performances.
+The reference experiment use the `ssd_resnet50_v1_fpn_640x640_coco17_tpu-8` pretrained model as a baseline and use the default training parameters in the `pipeline.config`. Due to the limited memory of the GPU card, we can only run the training process and the evaluation process sequentially. 
+
+The following Tensorboard chart illustrate the training process:
+<img src="training/reference/training.png" width="800">
+
+The performance metrics, evaluated on the validation set, are as follows:
+```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.186
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.362
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.165
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.086
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.452
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.562
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.037
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.173
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.275
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.182
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.559
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.676
+```
+
+The following illustrates the result of applying the model to a scene. The model is fairly accurate on predicting easy/large objects. False positives are rare. Many objects are not detected, though, which is not surprising given the model's low average recall score.
+
+<video width="640" height="640" controls>
+  <source src="training/reference/movies/segment-1146261869236413282_1680_000_1700_000_with_camera_labels.tfrecord.mp4">
+</video>
+
+Here is another scene for which the model performs especially bad. Bushes on the roadside are mistaken as either vehicles or pedestrains.
+<video width="640" height="640" controls>
+  <source src="training/reference/movies/segment-11119453952284076633_1369_940_1389_940_with_camera_labels.tfrecord.mp4">
+</video>
+
 
 #### Improve on the reference
 This section should highlight the different strategies you adopted to improve your model. It should contain relevant figures and details of your findings.
