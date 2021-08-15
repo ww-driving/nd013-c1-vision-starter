@@ -462,7 +462,7 @@ data
 The reference experiment use the `ssd_resnet50_v1_fpn_640x640_coco17_tpu-8` pretrained model as a baseline and use the default training parameters in the `pipeline.config`. Due to the limited memory of the GPU card, we can only run the training process and the evaluation process sequentially. 
 
 The following Tensorboard chart illustrate the training process:
-<img src="training/reference/training.png" width="800">
+![training](training/reference/training.png)
 
 The performance metrics, evaluated on the validation set, are as follows:
 ```
@@ -482,15 +482,10 @@ The performance metrics, evaluated on the validation set, are as follows:
 
 The following illustrates the result of applying the model to a scene. The model is fairly accurate on predicting easy/large objects. False positives are rare. Many objects are not detected, though, which is not surprising given the model's low average recall score.
 
-<video width="640" height="640" controls>
-  <source src="training/reference/movies/segment-1146261869236413282_1680_000_1700_000_with_camera_labels.tfrecord.mp4">
-</video>
+![movie](training/reference/movies/segment-1146261869236413282_1680_000_1700_000_with_camera_labels.tfrecord.mp4.gif)
 
 Here is another scene for which the model performs especially bad. Bushes on the roadside are mistaken as either vehicles or pedestrains.
-<video width="640" height="640" controls>
-  <source src="training/reference/movies/segment-11119453952284076633_1369_940_1389_940_with_camera_labels.tfrecord.mp4">
-</video>
-
+![movie](training/reference/movies/segment-11119453952284076633_1369_940_1389_940_with_camera_labels.tfrecord.mp4.gif)
 
 #### Improve on the reference
 This section should highlight the different strategies you adopted to improve your model. It should contain relevant figures and details of your findings.
