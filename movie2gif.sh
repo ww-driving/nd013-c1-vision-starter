@@ -1,0 +1,1 @@
+ffmpeg -y -i $1 -filter_complex "fps=10,scale=640:-1" $1.gif

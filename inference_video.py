@@ -52,8 +52,7 @@ def main(labelmap_path, model_path, tf_record_path, config_path, output_path):
     images = []
     logger.info(f'Inference on {tf_record_path}')
     for idx, batch in enumerate(dataset):
-        if idx % 50:
-            logger.info(f'Step: {idx}')
+        logger.info(f'Step: {idx}')
         # add new axis and feed into model 
         input_tensor = batch['image']
         image_np = input_tensor.numpy().astype(np.uint8)
@@ -69,8 +68,23 @@ def main(labelmap_path, model_path, tf_record_path, config_path, output_path):
 
         # detection_classes should be ints.
         detections['detection_classes'] = detections['detection_classes'].astype(np.int64)
+        
+        # ground_truch
+        gt_boxes, gt_classes = batch['groundtruth_boxes'].numpy(), batch['groundtruth_classes']
 
         image_np_with_detections = image_np.copy()
+        viz_utils.visualize_boxes_and_labels_on_image_array(
+            image_np_with_detections,
+            gt_boxes,
+            gt_classes,
+            None,
+            category_index,
+            use_normalized_coordinates=True,
+            max_boxes_to_draw=200,
+            min_score_thresh=.30,
+            line_thickness=1,
+            groundtruth_box_visualization_color=(255,0,0),
+            agnostic_mode=False)
         viz_utils.visualize_boxes_and_labels_on_image_array(
             image_np_with_detections,
             detections['detection_boxes'],
@@ -80,6 +94,8 @@ def main(labelmap_path, model_path, tf_record_path, config_path, output_path):
             use_normalized_coordinates=True,
             max_boxes_to_draw=200,
             min_score_thresh=.30,
+            line_thickness=1,
+            groundtruth_box_visualization_color=(255,0,0),
             agnostic_mode=False)
         images.append(image_np_with_detections)
     
@@ -94,7 +110,7 @@ def main(labelmap_path, model_path, tf_record_path, config_path, output_path):
         image = images[idx]
         im_obj.set_data(image)
         
-    anim = animation.FuncAnimation(f, animate, frames=198)
+    anim = animation.FuncAnimation(f, animate)
     anim.save(output_path, fps=5, dpi=300)
 
 
