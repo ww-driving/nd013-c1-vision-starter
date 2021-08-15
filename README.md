@@ -1,5 +1,9 @@
 # Object detection in an Urban Environment
 
+## Report
+
+[c1_report.md](c1_report.md)
+
 ## Data
 
 For this project, we will be using data from the [Waymo Open dataset](https://waymo.com/open/). The files can be downloaded directly from the website as tar files or from the [Google Cloud Bucket](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_2_0_individual_files/) as individual tf records. 
