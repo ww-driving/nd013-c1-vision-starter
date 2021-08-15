@@ -1,6 +1,6 @@
 
 ### Project overview
-In this project, we will build deep learning models to detect objects in the top camera images from Waymo open data set and measure their performance. Objects include vehicles, pedestrains, and bicycles, whereas traffic signs are out of scope. These are all objects that a self-driving car should be aware of when navigating on the street. Knowing the whereabout of such objects are essential for route planning and incident avoidance.
+In this project, we build deep learning models to detect objects in the top camera images from Waymo open data set and measure their performance. Objects include vehicles, pedestrains, and bicycles, whereas traffic signs are out of scope. These are all objects that a self-driving car should be aware of when navigating on the street. Knowing the whereabout of such objects are essential for route planning and incident avoidance.
 
 ### Set up
 #### Install python and packages
@@ -596,4 +596,23 @@ The average precision improves 34% over baseline, and the average recall improve
 
 For the challenge scene, experiment 5 performs much better than the baseline, even if the color distortion augmentation is not applied. 
 ![movie](training/adamoptm/movies/segment-11119453952284076633_1369_940_1389_940_with_camera_labels.tfrecord.mp4.gif)
+
+
+### Summary
+In this project, we use Tensorflow object detection API to find objects in camera images. We start with Resnet-50 as the baseline, then incrementally add random color distortion as data augmentation, try Adam optimizer, and use Resnet 101 as a deeper model. The results of the experiments are summarized in the following table:
+
+| Metric | #1 Baseline | #2 Color distortion | #3 Adam optimizer | #5 Resnet 101 |
+|-------------------------------------------------------------------------|-------|-------|-------|-------|
+|  Average Precision  (AP) @[ IoU=0.50:0.95 : area=   all : maxDets=100 ] | 0.186 | 0.201 | 0.200 | 0.249 |
+|  Average Precision  (AP) @[ IoU=0.50      : area=   all : maxDets=100 ] | 0.362 | 0.391 | 0.384 | 0.471 | 
+|  Average Precision  (AP) @[ IoU=0.75      : area=   all : maxDets=100 ] | 0.165 | 0.177 | 0.179 | 0.223 | 
+|  Average Precision  (AP) @[ IoU=0.50:0.95 : area= small : maxDets=100 ] | 0.086 | 0.096 | 0.100 | 0.133 | 
+|  Average Precision  (AP) @[ IoU=0.50:0.95 : area=medium : maxDets=100 ] | 0.452 | 0.494 | 0.503 | 0.572 | 
+|  Average Precision  (AP) @[ IoU=0.50:0.95 : area= large : maxDets=100 ] | 0.562 | 0.585 | 0.507 | 0.647 | 
+|  Average Recall     (AR) @[ IoU=0.50:0.95 : area=   all : maxDets=  1 ] | 0.037 | 0.038 | 0.039 | 0.045 | 
+|  Average Recall     (AR) @[ IoU=0.50:0.95 : area=   all : maxDets= 10 ] | 0.173 | 0.183 | 0.185 | 0.218 | 
+|  Average Recall     (AR) @[ IoU=0.50:0.95 : area=   all : maxDets=100 ] | 0.275 | 0.285 | 0.285 | 0.333 | 
+|  Average Recall     (AR) @[ IoU=0.50:0.95 : area= small : maxDets=100 ] | 0.182 | 0.191 | 0.188 | 0.234 | 
+|  Average Recall     (AR) @[ IoU=0.50:0.95 : area=medium : maxDets=100 ] | 0.559 | 0.578 | 0.593 | 0.643 | 
+|  Average Recall     (AR) @[ IoU=0.50:0.95 : area= large : maxDets=100 ] | 0.676 | 0.672 | 0.672 | 0.749 | 
 
