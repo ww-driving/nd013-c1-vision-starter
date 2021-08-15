@@ -21,7 +21,6 @@ git clone --depth 1 git://github.com/tensorflow/models.git && \
     protoc object_detection/protos/*.proto --python_out=. && \
     cp object_detection/packages/tf2/setup.py . &&\
     python -m pip install .
-
 ```
 
 #### Download and preprocess data
@@ -143,10 +142,10 @@ data
 ### Dataset
 
 #### Dataset analysis
-See [Exploratory Data Analysis.ipynb](./Exploratory Data Analysis.ipynb).
+See [Exploratory Data Analysis.ipynb](./Exploratory%20Data%20Analysis.ipynb).
 
 #### Cross validation
-We generate three datasets for modal training, validation, and testing respectively. The steps are as follows:
+Three datasets for modal training, validation, and testing are generated using the following steps:
 1. Make a random 80-20 split of the 100 record files. The 20 files will be the testing set.
 2. For each of the 80 files, make a 80-20 split of the file. That is to save the first 80% of frames into a training file, and to save the remaining 20% of frames into a validation file. 
 3. Move the resulted files into the respective directories.
@@ -458,8 +457,8 @@ data
 
 
 ### Training 
-#### Reference experiment
-The reference experiment use the `ssd_resnet50_v1_fpn_640x640_coco17_tpu-8` pretrained model as a baseline and use the default training parameters in the `pipeline.config`. Due to the limited memory of the GPU card, we can only run the training process and the evaluation process sequentially. 
+#### Experiment 1: Reference experiment
+The reference experiment uses the `ssd_resnet50_v1_fpn_640x640_coco17_tpu-8` pretrained model as a baseline and uses the default training parameters in the `pipeline.config`. Due to the limited memory of the GPU card, we can only run the training process and the evaluation process sequentially. 
 
 The following Tensorboard chart illustrate the training process:
 ![training](training/reference/training.png)
@@ -480,13 +479,121 @@ The performance metrics, evaluated on the validation set, are as follows:
  Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.676
 ```
 
-The following illustrates the result of applying the model to a scene. The model is fairly accurate on predicting easy/large objects. False positives are rare. Many objects are not detected, though, which is not surprising given the model's low average recall score.
+The following illustrates the result of applying the model to a scene. Ground truch bounding boxes are in red. The model is fairly accurate at predicting easy/large objects. False positives are rare. Many objects are not detected, though, which is not surprising given the model's low average recall score.
 
 ![movie](training/reference/movies/segment-1146261869236413282_1680_000_1700_000_with_camera_labels.tfrecord.mp4.gif)
 
 Here is another scene for which the model performs especially bad. Bushes on the roadside are mistaken as either vehicles or pedestrains.
 ![movie](training/reference/movies/segment-11119453952284076633_1369_940_1389_940_with_camera_labels.tfrecord.mp4.gif)
 
-#### Improve on the reference
-This section should highlight the different strategies you adopted to improve your model. It should contain relevant figures and details of your findings.
- 
+#### Experiment 2: Data augmentation
+In this experiment, random color distortion is introduced as a transformation step in the training, otherwise the model is the same as the baseline. The intuition is that color shouldn't be a strong feature in detecting objects. By varing the colors, the model should learn to ignore color and relying on more relevant features. 
+
+The effect of color distortion is depicted in [Explore augmentations.ipynb](./Explore%20augmentations.ipynb)
+
+The training progress is illustrated below, the baseline being orange.
+![training](training/randomcolor/training.png)
+
+The performance metrics, evaluated on the validation set, are as follows:
+```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.201
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.391
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.177
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.096
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.494
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.585
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.038
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.183
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.285
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.191
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.578
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.672
+ ```
+
+Compared to the baseline, the new model's average precision improves by 8% (0.201/0.186-1), while the average recall also improves by 4% (0.285/0.275-1). Therefore, the random color distortion seems to have a positive impact to the model performance.
+
+For the scene that experiment 1 preforms poorly, experiment 2 does pretty well. The false positives are significantly surpressed.
+![movie](training/randomcolor/movies/segment-11119453952284076633_1369_940_1389_940_with_camera_labels.tfrecord.mp4.gif)
+
+#### Experiment 3: Adam optimizer
+In this experiment, Adam optimizer is used in place of the momentum optimizer, otherwise it's the same as experiment #2. The same number of training steps (25000) is applied. The learning rate is manually specified starting at 1e-3, decreased to 1e-4 after 10000 steps, then decreased again to 1e-5 after 20000 steps. 
+
+The training looks like the following, the baseline being orange.
+![training](training/adamoptm/training.png)
+
+Notable in the chart is that the losses decrease quickly in the first 2000 steps then stablize or even increase in the next 8000 steps, and start to decrese again after the first 10000 steps. This can indicate the learning rate is too big for too long. A sooner decay may shorten the training time.
+
+The performance metrics, evaluated on the validation set, are as follows:
+```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.200
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.384
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.179
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.100
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.503
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.507
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.039
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.185
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.285
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.188
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.593
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.672
+```
+
+Performance of this experiment is almost identical to the previous one, which is reasonable since it's exactly the same architecture, only the optimizer is different. Training efficiency or speed of convergence can potentially be different.  However, not much conclusion can be drawn from a single run.
+
+For the challenge scene, experiment 3 performs equally well. 
+![movie](training/adamoptm/movies/segment-11119453952284076633_1369_940_1389_940_with_camera_labels.tfrecord.mp4.gif)
+
+#### Experiment 4: Resnet 101
+In this experiment, a deeper network `ssd_resnet101_v1_fpn_640x640_coco17_tpu-8` is used to replace Resnet50, otherwise it's the same as experiment #2. Theoretically, the model should perform better than its shallow counterpart. 
+
+The actually training process is as follows, the baseline being orange.
+![training](training/resnet101/training.png)
+
+The training converges badly. The regularization loss is too high and dominant, and the model has a hard time to overcome its impact. This is indicative of poor hyperparameter selection.
+
+The performance metrics, evaluated on the validation set, are as follows:
+```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.007
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.018
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.005
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.003
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.036
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.033
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.006
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.024
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.056
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.010
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.157
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.287
+```
+
+#### Experiment 5: Resnet 101 new configuration
+In this experiment, a few changes are made versus experiment 4: 1) regularizer weight is reduced from 0.0004 to 0.00004; 2) learning_rate_base is reduced from 0.04 to 0.01; 3) warmup_learning_rate is reduced from 0.013333 to 0.005; 4) color distortion transformation is removed (this is not intentional). The purpose is to temper the regularization loss and to avoid divergence due to high learning rate. 
+
+The training progress is as follows, the baseline being orange.
+![training](training/resnet101_nc/training.png)
+
+The changes make a huge difference, as training coverges much fast than experiment 4 and also the baseline. 
+
+The performance metrics, evaluated on the validation set, are as follows:
+```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.249
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.471
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.223
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.133
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.572
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.647
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.045
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.218
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.333
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.234
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.643
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.749
+```
+
+The average precision improves 34% over baseline, and the average recall improves 21%. 
+
+For the challenge scene, experiment 5 performs much better than the baseline, even if the color distortion augmentation is not applied. 
+![movie](training/adamoptm/movies/segment-11119453952284076633_1369_940_1389_940_with_camera_labels.tfrecord.mp4.gif)
+
