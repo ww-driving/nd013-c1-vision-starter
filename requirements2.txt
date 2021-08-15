@@ -1,0 +1,1 @@
+git+git://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI

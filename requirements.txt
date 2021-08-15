@@ -1,0 +1,8 @@
+Cython==0.29.24
+numpy==1.19.5
+jupyter==1.0.0
+matplotlib==3.3.3
+Pillow==8.3.1
+ray==1.5.1
+waymo-open-dataset-tf-2-5-0==1.4.0
+opencv-python==4.1.2.30
