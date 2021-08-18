@@ -1,15 +1,13 @@
 import argparse
-import time
 
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from matplotlib import animation
-
 from object_detection.builders.dataset_builder import build as build_dataset
+from object_detection.utils import visualization_utils as viz_utils
 from object_detection.utils.config_util import get_configs_from_pipeline_file
 from object_detection.utils.label_map_util import create_category_index_from_labelmap
-from object_detection.utils import visualization_utils as viz_utils
 
 from utils import get_module_logger
 
@@ -59,16 +57,16 @@ def main(labelmap_path, model_path, tf_record_path, config_path, output_path):
         input_tensor = input_tensor[tf.newaxis, ...]
 
         detections = detect_fn(input_tensor)
-        
+
         # tensor -> numpy arr, remove one dimensions
         num_detections = int(detections.pop('num_detections'))
         detections = {key: value[0, ...].numpy()
-                    for key, value in detections.items()}
+                      for key, value in detections.items()}
         detections['num_detections'] = num_detections
 
         # detection_classes should be ints.
         detections['detection_classes'] = detections['detection_classes'].astype(np.int64)
-        
+
         # ground_truch
         gt_boxes, gt_classes = batch['groundtruth_boxes'].numpy(), batch['groundtruth_classes']
 
@@ -83,7 +81,7 @@ def main(labelmap_path, model_path, tf_record_path, config_path, output_path):
             max_boxes_to_draw=200,
             min_score_thresh=.30,
             line_thickness=1,
-            groundtruth_box_visualization_color=(255,0,0),
+            groundtruth_box_visualization_color=(255, 0, 0),
             agnostic_mode=False)
         viz_utils.visualize_boxes_and_labels_on_image_array(
             image_np_with_detections,
@@ -95,10 +93,10 @@ def main(labelmap_path, model_path, tf_record_path, config_path, output_path):
             max_boxes_to_draw=200,
             min_score_thresh=.30,
             line_thickness=1,
-            groundtruth_box_visualization_color=(255,0,0),
+            groundtruth_box_visualization_color=(255, 0, 0),
             agnostic_mode=False)
         images.append(image_np_with_detections)
-    
+
     # now we can create the animation
     f = plt.figure()
     f.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
@@ -109,30 +107,30 @@ def main(labelmap_path, model_path, tf_record_path, config_path, output_path):
     def animate(idx):
         image = images[idx]
         im_obj.set_data(image)
-        
+
     anim = animation.FuncAnimation(f, animate)
     anim.save(output_path, fps=5, dpi=300)
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     logger = get_module_logger(__name__)
 
     parser = argparse.ArgumentParser(description='Create video')
     parser.add_argument('--labelmap_path', required=True, type=str,
-                help='path to the label map')
+                        help='path to the label map')
     parser.add_argument('--model_path', required=True, type=str,
                         help='path to the saved model folder')
     parser.add_argument('--tf_record_path', required=True, type=str,
                         help='path to the tf record file')
     parser.add_argument('--config_path', required=False, type=str,
-                        default='pipeline.config', 
+                        default='pipeline.config',
                         help='path to the config file')
-    parser.add_argument('--output_path', required=False, type=str, 
-                        default='animation.mp4', 
+    parser.add_argument('--output_path', required=False, type=str,
+                        default='animation.mp4',
                         help='path of the saved file')
     args = parser.parse_args()
-    main(args.labelmap_path, 
-         args.model_path, 
-         args.tf_record_path, 
-         args.config_path, 
+    main(args.labelmap_path,
+         args.model_path,
+         args.tf_record_path,
+         args.config_path,
          args.output_path)

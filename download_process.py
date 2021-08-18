@@ -86,11 +86,11 @@ def download_tfr(filename, data_dir):
     # create data dir
     dest = os.path.join(data_dir, 'raw')
     os.makedirs(dest, exist_ok=True)
-    
+
     local_path = os.path.join(dest, os.path.basename(filename))
 
+    # download the tf record file if it doesn't exist locally
     if not os.path.isfile(local_path):
-        # download the tf record file
         cmd = ['gsutil', 'cp', filename, f'{dest}']
         logger.info(f'Downloading {filename}')
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -136,14 +136,14 @@ def download_and_process(filename, temp_dir, data_dir):
         local_path = download_tfr(filename, temp_dir)
         process_tfr(local_path, data_dir)
         # remove the original tf record to save space
-        # logger.info(f'Deleting {local_path}')
-        # os.remove(local_path)
+        logger.info(f'Deleting {local_path}')
+        os.remove(local_path)
     except Exception as e:
         logger.error(f'Error processing {filename}')
         logger.exception(e)
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Download and process tf files')
     parser.add_argument('--data_dir', required=True,
                         help='processed data directory')
@@ -153,9 +153,9 @@ if __name__ == "__main__":
     logger = get_module_logger(__name__)
     # open the filenames file
     with open('filenames.txt', 'r') as f:
-        filenames = f.read().splitlines() 
+        filenames = f.read().splitlines()
     logger.info(f'Download {len(filenames)} files. Be patient, this will take a long time.')
-    
+
     data_dir = args.data_dir
     temp_dir = args.temp_dir
     # init ray
