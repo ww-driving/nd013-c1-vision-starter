@@ -568,6 +568,8 @@ The performance metrics, evaluated on the validation set, are as follows:
  Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.287
 ```
 
+This is obviously a failed training.
+
 #### Experiment 5: Resnet 101 new configuration
 In this experiment, a few changes are made versus experiment 4: 1) regularizer weight is reduced from 0.0004 to 0.00004; 2) learning_rate_base is reduced from 0.04 to 0.01; 3) warmup_learning_rate is reduced from 0.013333 to 0.005; 4) color distortion transformation is removed (this is not intentional). The purpose is to temper the regularization loss and to avoid divergence due to high learning rate. 
 
@@ -599,7 +601,7 @@ For the challenge scene, experiment 5 performs much better than the baseline, ev
 
 
 ### Summary
-In this project, we use Tensorflow object detection API to find objects in camera images. We start with Resnet-50 as the baseline, then incrementally add random color distortion as data augmentation, try Adam optimizer, and use Resnet 101 as a deeper model. The results of the experiments are summarized in the following table:
+In this project, we use Tensorflow object detection API to find objects in camera images. We start with Resnet-50 as the baseline, then incrementally add random color distortion as data augmentation, try Adam optimizer, and use Resnet 101 as a deeper model. The results of the experiments are summarized in the following table (ignoring experiment 4):
 
 | Metric | #1 Baseline | #2 Color distortion | #3 Adam optimizer | #5 Resnet 101 |
 |-------------------------------------------------------------------------|-------|-------|-------|-------|
